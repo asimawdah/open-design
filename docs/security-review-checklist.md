@@ -63,6 +63,32 @@ Use this matrix to choose the minimum review path for a security-sensitive chang
 | Preview/export pipeline | Script, remote media, font, or private data leakage | Sanitizer review, fixture review, exported-artifact inspection | Exported files contain only intentional content |
 | Dependency/release change | Supply-chain or packaging regression | Pin review, audit review, release-smoke path | Security-impacting release notes are recorded |
 
+## Abuse-case review prompts
+
+Before approving a security-sensitive change, reviewers should try to describe at least one realistic misuse path and the expected safe outcome:
+
+| Prompt | Example case | Expected safe outcome |
+| --- | --- | --- |
+| What happens if a user pastes a secret into this field? | Provider key, webhook token, local config value | Secret is stored only where intended and never echoed, logged, exported, or included in telemetry |
+| What happens if a URL redirects after validation? | Media fetch, proxy preview, provider base URL | Redirect target is revalidated and blocked if it becomes private, loopback, link-local, or metadata-hosted |
+| What happens if an agent path or workspace path is attacker-controlled? | Local agent setup, project import, generated command | Command runs without shell interpolation and stays inside the documented workspace scope |
+| What happens if an export contains untrusted assets? | HTML preview, ZIP export, font/image/media references | Sanitizer, allowlist, and export inspection keep scripts, remote media, and private files out |
+| What happens if validation fails during release? | Audit failure, packaging smoke failure, dependency change | Release is blocked or explicitly downgraded with a documented owner and follow-up action |
+
+## Review decision log
+
+Use this compact log in complex PRs so reviewers can distinguish accepted risks from accidental omissions:
+
+```md
+## Security decision log
+
+| Decision | Reason | Evidence | Owner | Follow-up |
+| --- | --- | --- | --- | --- |
+| <allowed/blocked/deferred> | <why this is safe enough> | <test, guard, audit, or manual check> | <person/team> | <issue, release gate, or none> |
+```
+
+Do not use the decision log to bypass required validation. Use it to make remaining risk explicit when a change cannot be fully verified in automation.
+
 ## Required evidence
 
 Security-sensitive pull requests should include concrete evidence instead of a generic "tested" note:
@@ -70,6 +96,7 @@ Security-sensitive pull requests should include concrete evidence instead of a g
 - The exact command or workflow name used, such as `pnpm guard`, package-manager audit, or release-smoke check.
 - The reviewed trust boundary and whether it touches secrets, local files, external URLs, generated artifacts, or desktop privileges.
 - Any blocked input cases that were verified, especially loopback, link-local, private ranges, redirects, metadata IPs, malformed URLs, and oversized responses.
+- Any abuse-case prompt that was reviewed, including the expected safe outcome.
 - Any manual release checks that remain, with the owner or release phase that should complete them.
 
 ## Pull request checklist
@@ -84,6 +111,8 @@ Copy this into security-sensitive pull requests when relevant:
 - [ ] URL/proxy inputs are validated against internal and metadata targets.
 - [ ] Local-agent command execution avoids shell interpolation.
 - [ ] Artifact/export paths were checked for unintended sensitive content.
+- [ ] Abuse-case prompt reviewed and safe outcome documented.
+- [ ] Security decision log added when risk is accepted or deferred.
 - [ ] Automated checks or tests were run and listed.
 - [ ] Remaining manual release checks are documented.
 ```
