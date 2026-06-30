@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const checklistPath = new URL("../docs/security-review-checklist.md", import.meta.url);
+const pullRequestTemplatePath = new URL("../.github/pull_request_template.md", import.meta.url);
 
 const requiredSections = [
   "# Security review checklist",
@@ -62,6 +63,18 @@ const requiredChecklistItems = [
   "Remaining manual release checks are documented.",
 ];
 
+const requiredPullRequestSecurityFields = [
+  "## Security review",
+  "Security-sensitive flow",
+  "docs/security-review-checklist.md",
+  "Trust boundary changed:",
+  "Secrets/tokens/config values touched:",
+  "External URLs, local files, generated artifacts, or desktop privileges touched:",
+  "Blocked input cases verified:",
+  "Abuse case reviewed and expected safe outcome:",
+  "Remaining manual release checks:",
+];
+
 test("security review checklist keeps required coverage", async () => {
   const source = await readChecklist();
 
@@ -117,8 +130,23 @@ test("pull request checklist keeps copyable review gates", async () => {
   }
 });
 
+test("pull request template keeps security review prompts", async () => {
+  const source = await readPullRequestTemplate();
+
+  for (const field of requiredPullRequestSecurityFields) {
+    assert.match(source, new RegExp(escapeRegExp(field), "i"), `missing PR security field: ${field}`);
+  }
+
+  assert.match(source, /Complete this section when "Security-sensitive flow" is checked\./, "template must tell contributors when the security review is required");
+  assert.match(source, /Write "Not applicable" with a short reason/, "template must require a reason when security review does not apply");
+});
+
 async function readChecklist(): Promise<string> {
   return readFile(checklistPath, "utf8");
+}
+
+async function readPullRequestTemplate(): Promise<string> {
+  return readFile(pullRequestTemplatePath, "utf8");
 }
 
 function escapeRegExp(value: string): string {
