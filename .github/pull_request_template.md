@@ -43,7 +43,7 @@ Fixes #
 
 ## Security review
 
-<!-- Complete this section when "Security-sensitive flow" is checked. Write "Not applicable" with a short reason for docs/tests-only or clearly unrelated changes. See docs/security-review-checklist.md for examples. -->
+<!-- Complete this section when "Security-sensitive flow" is checked. Write "Not applicable" with a short reason for docs/tests-only or clearly unrelated changes. For deeper changes, copy the expanded evidence structure from docs/security-review-pr-template.md and cross-check docs/security-review-checklist.md. -->
 
 - Trust boundary changed:
 - Secrets/tokens/config values touched:
