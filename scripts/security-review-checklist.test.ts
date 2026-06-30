@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const checklistPath = new URL("../docs/security-review-checklist.md", import.meta.url);
-const pullRequestTemplatePath = new URL("../.github/pull_request_template.md", import.meta.url);
+const templatePath = new URL("../docs/security-review-pr-template.md", import.meta.url);
 
 const requiredSections = [
   "# Security review checklist",
@@ -17,6 +17,7 @@ const requiredSections = [
   "## Abuse-case review prompts",
   "## Review decision log",
   "## Required evidence",
+  "## Reusable PR template",
   "## Pull request checklist",
 ];
 
@@ -63,16 +64,25 @@ const requiredChecklistItems = [
   "Remaining manual release checks are documented.",
 ];
 
-const requiredPullRequestSecurityFields = [
+const requiredTemplateSections = [
+  "# Security review PR template",
   "## Security review",
-  "Security-sensitive flow",
-  "docs/security-review-checklist.md",
+  "### Scope",
+  "### Validation evidence",
+  "### Abuse case reviewed",
+  "### Security decision log",
+  "### Release readiness",
+];
+
+const requiredTemplateFields = [
+  "Change area:",
   "Trust boundary changed:",
-  "Secrets/tokens/config values touched:",
-  "External URLs, local files, generated artifacts, or desktop privileges touched:",
-  "Blocked input cases verified:",
-  "Abuse case reviewed and expected safe outcome:",
-  "Remaining manual release checks:",
+  "Sensitive assets touched:",
+  "User-visible behavior:",
+  "Automated checks:",
+  "Manual checks:",
+  "Blocked input cases:",
+  "Artifacts inspected:",
 ];
 
 test("security review checklist keeps required coverage", async () => {
@@ -130,23 +140,35 @@ test("pull request checklist keeps copyable review gates", async () => {
   }
 });
 
-test("pull request template keeps security review prompts", async () => {
-  const source = await readPullRequestTemplate();
+test("security review checklist links to reusable PR template", async () => {
+  const source = await readChecklist();
 
-  for (const field of requiredPullRequestSecurityFields) {
-    assert.match(source, new RegExp(escapeRegExp(field), "i"), `missing PR security field: ${field}`);
+  assert.match(source, /\[security-review-pr-template\.md\]\(\.\/security-review-pr-template\.md\)/, "checklist must link to the reusable PR template");
+  assert.match(source, /scope, validation evidence, abuse-case review, decision-log, and release-readiness sections/i, "checklist must describe template coverage");
+});
+
+test("security review PR template keeps required evidence fields", async () => {
+  const source = await readTemplate();
+
+  for (const section of requiredTemplateSections) {
+    assert.match(source, new RegExp(`^${escapeRegExp(section)}$`, "m"), `missing template section: ${section}`);
   }
 
-  assert.match(source, /Complete this section when "Security-sensitive flow" is checked\./, "template must tell contributors when the security review is required");
-  assert.match(source, /Write "Not applicable" with a short reason/, "template must require a reason when security review does not apply");
+  for (const field of requiredTemplateFields) {
+    assert.match(source, new RegExp(escapeRegExp(field), "i"), `missing template field: ${field}`);
+  }
+
+  assert.match(source, /\| Abuse case \| Expected safe outcome \| Evidence \|/, "template must keep abuse-case evidence table");
+  assert.match(source, /\| Decision \| Reason \| Evidence \| Owner \| Follow-up \|/, "template must keep decision-log table");
+  assert.match(source, /Remaining manual release checks have an owner and release phase\./, "template must keep release ownership gate");
 });
 
 async function readChecklist(): Promise<string> {
   return readFile(checklistPath, "utf8");
 }
 
-async function readPullRequestTemplate(): Promise<string> {
-  return readFile(pullRequestTemplatePath, "utf8");
+async function readTemplate(): Promise<string> {
+  return readFile(templatePath, "utf8");
 }
 
 function escapeRegExp(value: string): string {
