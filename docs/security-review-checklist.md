@@ -51,6 +51,27 @@ Every security-sensitive pull request should state:
 - Keep generated files, vendored assets, and allowlisted JavaScript documented in the relevant guard comments.
 - Record security-impacting release notes when behavior changes for secrets, proxying, local execution, or exported artifacts.
 
+## Risk and validation matrix
+
+Use this matrix to choose the minimum review path for a security-sensitive change:
+
+| Change area | Main risk | Required validation | Release gate |
+| --- | --- | --- | --- |
+| BYOK provider setup | Secret exposure or unsafe provider URL | Redaction review, provider URL validation, failure-path review | No secrets in logs, examples, fixtures, or exports |
+| Local agent integration | Unsafe command execution or broad file access | Argument-array execution review, workspace-scope review, dry-run behavior | Destructive actions are explicit and documented |
+| Proxy/media/webhook fetch | SSRF, redirects to internal targets, resource exhaustion | Redirect policy review, blocked-network tests, timeout/body-limit checks | Internal and metadata targets stay blocked |
+| Preview/export pipeline | Script, remote media, font, or private data leakage | Sanitizer review, fixture review, exported-artifact inspection | Exported files contain only intentional content |
+| Dependency/release change | Supply-chain or packaging regression | Pin review, audit review, release-smoke path | Security-impacting release notes are recorded |
+
+## Required evidence
+
+Security-sensitive pull requests should include concrete evidence instead of a generic "tested" note:
+
+- The exact command or workflow name used, such as `pnpm guard`, package-manager audit, or release-smoke check.
+- The reviewed trust boundary and whether it touches secrets, local files, external URLs, generated artifacts, or desktop privileges.
+- Any blocked input cases that were verified, especially loopback, link-local, private ranges, redirects, metadata IPs, malformed URLs, and oversized responses.
+- Any manual release checks that remain, with the owner or release phase that should complete them.
+
 ## Pull request checklist
 
 Copy this into security-sensitive pull requests when relevant:
