@@ -99,6 +99,12 @@ Security-sensitive pull requests should include concrete evidence instead of a g
 - Any abuse-case prompt that was reviewed, including the expected safe outcome.
 - Any manual release checks that remain, with the owner or release phase that should complete them.
 
+## Reusable PR template
+
+Use [`security-review-pr-template.md`](./security-review-pr-template.md) when a change needs repeatable evidence capture. The template turns this checklist into a pull request description structure with scope, validation evidence, abuse-case review, decision-log, and release-readiness sections.
+
+Keep the template aligned with this checklist when adding new security review areas so reviewers do not need to reconcile two separate review contracts.
+
 ## Pull request checklist
 
 Copy this into security-sensitive pull requests when relevant:
