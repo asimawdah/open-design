@@ -1,6 +1,6 @@
 # Security review checklist
 
-Use this checklist when changing model-provider configuration, local-agent execution, proxy/network behavior, artifact exports, desktop packaging, or dependency policy. It is designed for pull request review and release readiness, not as a replacement for threat modeling.
+Use this checklist when changing model-provider configuration, local-agent execution, proxy/network behavior, artifact exports, desktop packaging, telemetry/diagnostics, or dependency policy. It is designed for pull request review and release readiness, not as a replacement for threat modeling.
 
 ## Review summary
 
@@ -43,13 +43,21 @@ Every security-sensitive pull request should state:
 - Document any export format that can embed external links, scripts, fonts, or remote media.
 - Add fixtures for risky export cases when a bug fix changes sanitizer, preview, or packaging behavior.
 
+## Telemetry, privacy, and diagnostics
+
+- Treat analytics events, diagnostics bundles, crash reports, support exports, and debug logs as security-sensitive output surfaces.
+- Keep prompts, design file contents, local paths, provider keys, access tokens, workspace names, and generated artifacts out of telemetry unless there is an explicit opt-in and retention note.
+- Prefer stable event names, coarse status codes, redacted identifiers, and aggregate counts over raw user content.
+- Document retention, export, and deletion expectations when a change adds a new persisted diagnostic or analytics field.
+- Add fixtures or snapshot checks for new telemetry payloads so sensitive values cannot drift into logs or events later.
+
 ## Dependency and release hygiene
 
 - Keep dependency versions pinned according to the repository dependency-spec guard.
 - Run package-manager audit or equivalent review before releases that change runtime dependencies.
 - Verify desktop packaging, updater, and notarization changes with a release-smoke path before publishing.
 - Keep generated files, vendored assets, and allowlisted JavaScript documented in the relevant guard comments.
-- Record security-impacting release notes when behavior changes for secrets, proxying, local execution, or exported artifacts.
+- Record security-impacting release notes when behavior changes for secrets, proxying, local execution, telemetry, diagnostics, or exported artifacts.
 
 ## Risk and validation matrix
 
@@ -61,6 +69,7 @@ Use this matrix to choose the minimum review path for a security-sensitive chang
 | Local agent integration | Unsafe command execution or broad file access | Argument-array execution review, workspace-scope review, dry-run behavior | Destructive actions are explicit and documented |
 | Proxy/media/webhook fetch | SSRF, redirects to internal targets, resource exhaustion | Redirect policy review, blocked-network tests, timeout/body-limit checks | Internal and metadata targets stay blocked |
 | Preview/export pipeline | Script, remote media, font, or private data leakage | Sanitizer review, fixture review, exported-artifact inspection | Exported files contain only intentional content |
+| Telemetry/diagnostics change | Accidental collection of prompts, paths, secrets, or generated artifacts | Payload snapshot review, redaction review, opt-in/retention review | Telemetry and diagnostics contain only documented, redacted fields |
 | Dependency/release change | Supply-chain or packaging regression | Pin review, audit review, release-smoke path | Security-impacting release notes are recorded |
 
 ## Abuse-case review prompts
@@ -73,6 +82,7 @@ Before approving a security-sensitive change, reviewers should try to describe a
 | What happens if a URL redirects after validation? | Media fetch, proxy preview, provider base URL | Redirect target is revalidated and blocked if it becomes private, loopback, link-local, or metadata-hosted |
 | What happens if an agent path or workspace path is attacker-controlled? | Local agent setup, project import, generated command | Command runs without shell interpolation and stays inside the documented workspace scope |
 | What happens if an export contains untrusted assets? | HTML preview, ZIP export, font/image/media references | Sanitizer, allowlist, and export inspection keep scripts, remote media, and private files out |
+| What happens if telemetry captures a workspace error? | Crash report, analytics event, support bundle, debug log | Event payload uses redacted IDs and coarse status codes without prompts, secrets, local paths, or generated artifacts |
 | What happens if validation fails during release? | Audit failure, packaging smoke failure, dependency change | Release is blocked or explicitly downgraded with a documented owner and follow-up action |
 
 ## Review decision log
@@ -94,14 +104,15 @@ Do not use the decision log to bypass required validation. Use it to make remain
 Security-sensitive pull requests should include concrete evidence instead of a generic "tested" note:
 
 - The exact command or workflow name used, such as `pnpm guard`, package-manager audit, or release-smoke check.
-- The reviewed trust boundary and whether it touches secrets, local files, external URLs, generated artifacts, or desktop privileges.
+- The reviewed trust boundary and whether it touches secrets, local files, external URLs, generated artifacts, telemetry/diagnostics, or desktop privileges.
 - Any blocked input cases that were verified, especially loopback, link-local, private ranges, redirects, metadata IPs, malformed URLs, and oversized responses.
+- Any telemetry, diagnostic, log, crash-report, or support-export payload that changed, with redaction and retention notes.
 - Any abuse-case prompt that was reviewed, including the expected safe outcome.
 - Any manual release checks that remain, with the owner or release phase that should complete them.
 
 ## Evidence examples
 
-Use [`security-review-examples.md`](./security-review-examples.md) for copyable examples covering BYOK provider configuration, local-agent execution, proxy/media/webhook fetches, preview/export safety, and dependency/release changes.
+Use [`security-review-examples.md`](./security-review-examples.md) for copyable examples covering BYOK provider configuration, local-agent execution, proxy/media/webhook fetches, preview/export safety, telemetry/diagnostics, and dependency/release changes.
 
 The examples are intentionally specific: each one includes a trust-boundary statement, sensitive assets, exact validation evidence, blocked input cases, an abuse-case outcome, and remaining release checks. Use them to avoid vague PR descriptions such as "tested locally" for security-sensitive changes.
 
@@ -130,10 +141,11 @@ Copy this into security-sensitive pull requests when relevant:
 ## Security review
 
 - [ ] Trust boundary changed and described.
-- [ ] Secrets are not logged, exported, committed, or echoed in errors.
+- [ ] Secrets are not logged, exported, committed, echoed in errors, or included in telemetry.
 - [ ] URL/proxy inputs are validated against internal and metadata targets.
 - [ ] Local-agent command execution avoids shell interpolation.
 - [ ] Artifact/export paths were checked for unintended sensitive content.
+- [ ] Telemetry, diagnostics, logs, and support exports were checked for redaction and retention.
 - [ ] Abuse-case prompt reviewed and safe outcome documented.
 - [ ] Security decision log added when risk is accepted or deferred.
 - [ ] Automated checks or tests were run and listed.
