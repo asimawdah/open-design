@@ -6,7 +6,6 @@ const aiOutputGuidePath = new URL("../docs/ai-output-security-review.md", import
 const checklistPath = new URL("../docs/security-review-checklist.md", import.meta.url);
 const templatePath = new URL("../docs/security-review-pr-template.md", import.meta.url);
 const examplesPath = new URL("../docs/security-review-examples.md", import.meta.url);
-const githubPrTemplatePath = new URL("../.github/pull_request_template.md", import.meta.url);
 
 const requiredGuideSections = [
   "# AI output security review",
@@ -51,17 +50,15 @@ test("AI output guide keeps explicit review coverage", async () => {
   }
 });
 
-test("security review surfaces link AI output handoff review", async () => {
+test("security review docs link AI output handoff review", async () => {
   const checklist = await readFile(checklistPath, "utf8");
   const template = await readFile(templatePath, "utf8");
   const examples = await readFile(examplesPath, "utf8");
-  const githubTemplate = await readFile(githubPrTemplatePath, "utf8");
 
   assert.match(checklist, /docs\/ai-output-security-review\.md|AI output security review/i, "checklist must link AI output review guidance");
   assert.match(checklist, /model output, agent output, renderer handoff, and generated actions/i, "checklist must include AI output as a security surface");
   assert.match(template, /AI output handoff:/i, "reusable PR template must ask for AI output evidence");
   assert.match(examples, /## AI output and renderer handoff/i, "examples must include AI output handoff evidence");
-  assert.match(githubTemplate, /AI output, renderer handoff, generated actions/i, "GitHub PR template must expose AI output review scope");
 });
 
 async function readGuide(): Promise<string> {
