@@ -86,6 +86,27 @@ Minimum evidence to include:
 - A generated-artifact inspection note.
 - An explicit statement about remote links, scripts, fonts, and private file references.
 
+## AI output and renderer handoff
+
+```md
+### Security review
+
+- Change area: AI output renderer handoff
+- Trust boundary changed: Model or agent output is parsed into renderer payloads, generated actions, and project state.
+- Sensitive assets touched: Prompt text, design content, generated HTML/CSS/SVG, renderer JSON, generated file paths, local action targets.
+- Automated checks: `pnpm guard`; malformed-output schema fixture; sanitizer fixture for generated markup.
+- Manual checks: Invalid output recovery state reviewed in the UI and no partial generated state was committed.
+- Blocked input cases: unknown action field, unsafe generated path, external asset reference, local file URL, oversized output, missing required renderer section.
+- Abuse case reviewed and expected safe outcome: Model output includes a command-like field or unsafe asset reference; schema validation rejects it before rendering, writing files, calling agents, or exporting artifacts.
+- Remaining manual release checks: Release smoke should confirm invalid-output recovery copy and one safe generated handoff from the packaged app.
+```
+
+Minimum evidence to include:
+
+- A schema, parser, or sanitizer check that runs before rendering or side effects.
+- A malformed-output fixture covering unknown fields, unsafe paths, and oversized output.
+- A user-visible fallback note for invalid or partial generated output.
+
 ## Telemetry, privacy, and diagnostics
 
 ```md
@@ -135,6 +156,7 @@ Use this compact checklist before approving:
 - Evidence names exact commands or workflow runs.
 - Blocked inputs are specific, not generic.
 - Secrets and local files have a redaction or non-exposure statement.
+- AI output, renderer handoff, generated actions, and invalid-output fallback are covered when model or agent output can affect previews, exports, files, network, or desktop privileges.
 - Telemetry and diagnostics list only documented, redacted, intentionally retained fields.
 - Manual release checks have an owner or release phase.
 - Accepted, blocked, or deferred risks are captured in the decision log.
