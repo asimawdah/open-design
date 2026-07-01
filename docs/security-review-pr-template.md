@@ -1,6 +1,6 @@
 # Security review PR template
 
-Use this template for pull requests that change trust boundaries, provider configuration, local-agent execution, proxy/network fetches, generated artifacts, desktop packaging, or dependency/release policy.
+Use this template for pull requests that change trust boundaries, provider configuration, local-agent execution, proxy/network fetches, generated artifacts, telemetry/diagnostics, desktop packaging, or dependency/release policy.
 
 Copy the relevant sections into the PR description. Remove sections only when they clearly do not apply.
 
@@ -8,9 +8,9 @@ Copy the relevant sections into the PR description. Remove sections only when th
 
 ### Scope
 
-- Change area: BYOK provider, local agent, proxy/media/webhook, preview/export, dependency/release, or other.
+- Change area: BYOK provider, local agent, proxy/media/webhook, preview/export, telemetry/diagnostics, dependency/release, or other.
 - Trust boundary changed: describe what boundary changed and why.
-- Sensitive assets touched: describe credentials, local files, external URLs, generated artifacts, desktop privileges, or none.
+- Sensitive assets touched: describe credentials, local files, external URLs, generated artifacts, telemetry payloads, diagnostics bundles, desktop privileges, or none.
 - User-visible behavior: describe what users will notice.
 
 ### Validation evidence
@@ -18,13 +18,14 @@ Copy the relevant sections into the PR description. Remove sections only when th
 - Automated checks: list the exact command or workflow name, for example `pnpm guard`.
 - Manual checks: describe what was checked manually and by whom.
 - Blocked input cases: list loopback, link-local, private ranges, redirects, metadata IPs, malformed URLs, oversized responses, or not applicable.
-- Artifacts inspected: list logs, screenshots, HTML, PDF, ZIP, generated assets, or not applicable.
+- Artifacts inspected: list logs, screenshots, HTML, PDF, ZIP, generated assets, telemetry events, diagnostics bundles, crash reports, support exports, or not applicable.
+- Telemetry and diagnostics: list event fields, redacted identifiers, opt-in/retention notes, or not applicable.
 
 ### Abuse case reviewed
 
 | Abuse case | Expected safe outcome | Evidence |
 | --- | --- | --- |
-| Realistic misuse path reviewed | Safe behavior confirmed | Test, guard, log excerpt, or manual check |
+| Realistic misuse path reviewed | Safe behavior confirmed | Test, guard, log excerpt, payload snapshot, or manual check |
 
 ### Security decision log
 
@@ -38,7 +39,7 @@ Use this table when risk is accepted, blocked, or deferred.
 
 - Security owner: person responsible for the final safe outcome.
 - Merge gate: automated guard only, maintainer review, release approval, or blocked.
-- Escalation trigger: accepted risk, deferred validation, weakened guard, changed trust boundary, sensitive configuration persistence, or not applicable.
+- Escalation trigger: accepted risk, deferred validation, weakened guard, changed trust boundary, sensitive configuration persistence, telemetry payload expansion, or not applicable.
 - Follow-up link: issue, release gate, owner note, or none.
 
 ### Release readiness
@@ -47,6 +48,7 @@ Use this table when risk is accepted, blocked, or deferred.
 - [ ] URL/proxy inputs are validated against internal and metadata targets.
 - [ ] Local-agent command execution avoids shell interpolation.
 - [ ] Artifact/export paths were checked for unintended sensitive content.
+- [ ] Telemetry, diagnostics, crash reports, and support exports use redacted fields with documented retention or opt-in behavior.
 - [ ] Dependency changes keep pinned versions and documented release-impact notes.
 - [ ] Security owner and escalation path are documented when risk is accepted or deferred.
 - [ ] Remaining manual release checks have an owner and release phase.
