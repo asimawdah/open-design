@@ -36,7 +36,7 @@ Fixes #
 - [ ] **Extension point** — new entry under `skills/`, `design-systems/`, `design-templates/`, or `craft/`, or change to the skills protocol
 - [ ] **i18n keys** — added new translation keys (see `TRANSLATIONS.md` for the locale workflow)
 - [ ] **New top-level dependency** — adding any new entry to the **root** `package.json` (`dependencies` or `devDependencies`); workspace-package `package.json` files are out of scope. Include a paragraph on what we get vs. what bytes we ship (see `CONTRIBUTING.md` → Code style)
-- [ ] **Security-sensitive flow** — touches secrets, local files, external URLs, generated artifacts, desktop privileges, dependencies, release behavior, or model-provider configuration
+- [ ] **Security-sensitive flow** — touches secrets, local files, external URLs, generated artifacts, desktop privileges, dependencies, release behavior, telemetry/diagnostics, or model-provider configuration
 - [ ] **Default behavior change** — changes what existing users experience without opting in (default model, default setting, file/SQLite schema, auto-network on startup, auto-install)
 - [ ] **None** — internal refactor, docs, tests, or translation update only
 
@@ -47,9 +47,10 @@ Fixes #
 
 - Trust boundary changed:
 - Secrets/tokens/config values touched:
-- External URLs, local files, generated artifacts, or desktop privileges touched:
+- External URLs, local files, generated artifacts, telemetry/diagnostics, or desktop privileges touched:
 - Blocked input cases verified:
 - Abuse case reviewed and expected safe outcome:
+- Telemetry/diagnostics redaction and retention checked:
 - Security owner and escalation path:
 - Deferred validation or follow-up link:
 - Remaining manual release checks:
