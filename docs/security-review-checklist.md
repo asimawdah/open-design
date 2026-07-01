@@ -99,9 +99,19 @@ Security-sensitive pull requests should include concrete evidence instead of a g
 - Any abuse-case prompt that was reviewed, including the expected safe outcome.
 - Any manual release checks that remain, with the owner or release phase that should complete them.
 
+## Escalation and ownership
+
+Security-sensitive pull requests should make ownership explicit before merge so release blockers do not become ambiguous:
+
+- Assign a security owner for the change, even when the owner is the PR author.
+- Mark whether the change can merge after automated guard coverage or requires manual release approval.
+- Escalate to a maintainer before merge when a change accepts risk, defers validation, weakens a guard, changes a trust boundary, or touches credential storage.
+- Link any deferred validation to a follow-up issue, release gate, or documented owner instead of leaving a checklist item blank.
+- Keep the PR in draft or blocked state when the safe outcome depends on an unresolved release-smoke, audit, or manual artifact inspection.
+
 ## Reusable PR template
 
-Use [`security-review-pr-template.md`](./security-review-pr-template.md) when a change needs repeatable evidence capture. The template turns this checklist into a pull request description structure with scope, validation evidence, abuse-case review, decision-log, and release-readiness sections.
+Use [`security-review-pr-template.md`](./security-review-pr-template.md) when a change needs repeatable evidence capture. The template turns this checklist into a pull request description structure with scope, validation evidence, abuse-case review, decision-log, escalation ownership, and release-readiness sections.
 
 Keep the template aligned with this checklist when adding new security review areas so reviewers do not need to reconcile two separate review contracts.
 
@@ -129,6 +139,8 @@ Copy this into security-sensitive pull requests when relevant:
 - [ ] Artifact/export paths were checked for unintended sensitive content.
 - [ ] Abuse-case prompt reviewed and safe outcome documented.
 - [ ] Security decision log added when risk is accepted or deferred.
+- [ ] Security owner and escalation path documented.
 - [ ] Automated checks or tests were run and listed.
 - [ ] Remaining manual release checks are documented.
+- [ ] Deferred validation links to a follow-up issue, release gate, or documented owner.
 ```
