@@ -4,6 +4,7 @@ import test from "node:test";
 
 const checklistPath = new URL("../docs/security-review-checklist.md", import.meta.url);
 const templatePath = new URL("../docs/security-review-pr-template.md", import.meta.url);
+const githubPrTemplatePath = new URL("../.github/pull_request_template.md", import.meta.url);
 
 const requiredSections = [
   "# Security review checklist",
@@ -18,6 +19,7 @@ const requiredSections = [
   "## Review decision log",
   "## Required evidence",
   "## Reusable PR template",
+  "## Gate maintenance",
   "## Pull request checklist",
 ];
 
@@ -85,6 +87,19 @@ const requiredTemplateFields = [
   "Artifacts inspected:",
 ];
 
+const requiredGithubTemplateFields = [
+  "**Security-sensitive flow**",
+  "## Security review",
+  "Trust boundary changed:",
+  "Secrets/tokens/config values touched:",
+  "External URLs, local files, generated artifacts, or desktop privileges touched:",
+  "Blocked input cases verified:",
+  "Abuse case reviewed and expected safe outcome:",
+  "Remaining manual release checks:",
+  "docs/security-review-pr-template.md",
+  "docs/security-review-checklist.md",
+];
+
 test("security review checklist keeps required coverage", async () => {
   const source = await readChecklist();
 
@@ -147,6 +162,15 @@ test("security review checklist links to reusable PR template", async () => {
   assert.match(source, /scope, validation evidence, abuse-case review, decision-log, and release-readiness sections/i, "checklist must describe template coverage");
 });
 
+test("security gate maintenance keeps all review surfaces synchronized", async () => {
+  const source = await readChecklist();
+
+  assert.match(source, /\.github\/pull_request_template\.md/, "gate maintenance must mention the GitHub PR template");
+  assert.match(source, /docs\/security-review-pr-template\.md/, "gate maintenance must mention the reusable security PR template");
+  assert.match(source, /scripts\/security-review-checklist\.test\.ts/, "gate maintenance must mention guard coverage");
+  assert.match(source, /update the checklist, the reusable template, the GitHub PR template prompt, and the guard test in the same PR/i, "gate maintenance must prevent review-surface drift");
+});
+
 test("security review PR template keeps required evidence fields", async () => {
   const source = await readTemplate();
 
@@ -163,12 +187,28 @@ test("security review PR template keeps required evidence fields", async () => {
   assert.match(source, /Remaining manual release checks have an owner and release phase\./, "template must keep release ownership gate");
 });
 
+test("GitHub pull request template keeps lightweight security review gates", async () => {
+  const source = await readGithubPrTemplate();
+
+  for (const field of requiredGithubTemplateFields) {
+    assert.match(source, new RegExp(escapeRegExp(field), "i"), `missing GitHub PR template field: ${field}`);
+  }
+
+  assert.match(source, /touches secrets, local files, external URLs, generated artifacts, desktop privileges, dependencies, release behavior, or model-provider configuration/i, "security-sensitive surface checkbox must stay explicit");
+  assert.match(source, /Complete this section when "Security-sensitive flow" is checked/i, "GitHub template must require security review when checked");
+  assert.match(source, /Write "Not applicable" with a short reason/i, "GitHub template must require an explicit non-applicable reason");
+});
+
 async function readChecklist(): Promise<string> {
   return readFile(checklistPath, "utf8");
 }
 
 async function readTemplate(): Promise<string> {
   return readFile(templatePath, "utf8");
+}
+
+async function readGithubPrTemplate(): Promise<string> {
+  return readFile(githubPrTemplatePath, "utf8");
 }
 
 function escapeRegExp(value: string): string {
