@@ -34,6 +34,13 @@ Use this table when risk is accepted, blocked, or deferred.
 | --- | --- | --- | --- | --- |
 | allowed, blocked, or deferred | why this is safe enough | test, guard, audit, or manual check | person or team | issue, release gate, or none |
 
+### Escalation and ownership
+
+- Security owner: person responsible for the final safe outcome.
+- Merge gate: automated guard only, maintainer review, release approval, or blocked.
+- Escalation trigger: accepted risk, deferred validation, weakened guard, changed trust boundary, sensitive configuration persistence, or not applicable.
+- Follow-up link: issue, release gate, owner note, or none.
+
 ### Release readiness
 
 - [ ] Credentials are not logged, exported, committed, echoed in errors, or included in telemetry.
@@ -41,4 +48,5 @@ Use this table when risk is accepted, blocked, or deferred.
 - [ ] Local-agent command execution avoids shell interpolation.
 - [ ] Artifact/export paths were checked for unintended sensitive content.
 - [ ] Dependency changes keep pinned versions and documented release-impact notes.
+- [ ] Security owner and escalation path are documented when risk is accepted or deferred.
 - [ ] Remaining manual release checks have an owner and release phase.
