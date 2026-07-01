@@ -50,6 +50,8 @@ Fixes #
 - External URLs, local files, generated artifacts, or desktop privileges touched:
 - Blocked input cases verified:
 - Abuse case reviewed and expected safe outcome:
+- Security owner and escalation path:
+- Deferred validation or follow-up link:
 - Remaining manual release checks:
 
 
