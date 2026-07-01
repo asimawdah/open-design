@@ -105,6 +105,16 @@ Use [`security-review-pr-template.md`](./security-review-pr-template.md) when a 
 
 Keep the template aligned with this checklist when adding new security review areas so reviewers do not need to reconcile two separate review contracts.
 
+## Gate maintenance
+
+Keep the three review surfaces synchronized whenever this checklist changes:
+
+- `.github/pull_request_template.md` should keep the lightweight security review prompts that every PR author sees.
+- `docs/security-review-pr-template.md` should keep the expanded evidence template for high-risk PRs.
+- `scripts/security-review-checklist.test.ts` should guard both docs and the GitHub PR template so reviewers notice accidental removal of review gates before merge.
+
+When a new security area is added, update the checklist, the reusable template, the GitHub PR template prompt, and the guard test in the same PR. This prevents a checklist-only change from silently drifting away from the pull request workflow.
+
 ## Pull request checklist
 
 Copy this into security-sensitive pull requests when relevant:
