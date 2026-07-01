@@ -18,6 +18,7 @@ const requiredSections = [
   "## Abuse-case review prompts",
   "## Review decision log",
   "## Required evidence",
+  "## Escalation and ownership",
   "## Reusable PR template",
   "## Gate maintenance",
   "## Pull request checklist",
@@ -36,6 +37,9 @@ const requiredSecurityTerms = [
   "oversized responses",
   "attacker-controlled",
   "accepted risks",
+  "security owner",
+  "escalation path",
+  "deferred validation",
 ];
 
 const requiredMatrixAreas = [
@@ -62,8 +66,10 @@ const requiredChecklistItems = [
   "Artifact/export paths were checked for unintended sensitive content.",
   "Abuse-case prompt reviewed and safe outcome documented.",
   "Security decision log added when risk is accepted or deferred.",
+  "Security owner and escalation path documented.",
   "Automated checks or tests were run and listed.",
   "Remaining manual release checks are documented.",
+  "Deferred validation links to a follow-up issue, release gate, or documented owner.",
 ];
 
 const requiredTemplateSections = [
@@ -73,6 +79,7 @@ const requiredTemplateSections = [
   "### Validation evidence",
   "### Abuse case reviewed",
   "### Security decision log",
+  "### Escalation and ownership",
   "### Release readiness",
 ];
 
@@ -85,6 +92,10 @@ const requiredTemplateFields = [
   "Manual checks:",
   "Blocked input cases:",
   "Artifacts inspected:",
+  "Security owner:",
+  "Merge gate:",
+  "Escalation trigger:",
+  "Follow-up link:",
 ];
 
 const requiredGithubTemplateFields = [
@@ -95,6 +106,8 @@ const requiredGithubTemplateFields = [
   "External URLs, local files, generated artifacts, or desktop privileges touched:",
   "Blocked input cases verified:",
   "Abuse case reviewed and expected safe outcome:",
+  "Security owner and escalation path:",
+  "Deferred validation or follow-up link:",
   "Remaining manual release checks:",
   "docs/security-review-pr-template.md",
   "docs/security-review-checklist.md",
@@ -147,6 +160,16 @@ test("security decision log keeps accepted-risk documentation", async () => {
   assert.match(source, /Do not use the decision log to bypass required validation\./, "decision log must not become a validation bypass");
 });
 
+test("security escalation guidance keeps ownership and merge gates explicit", async () => {
+  const source = await readChecklist();
+
+  assert.match(source, /Assign a security owner for the change/i, "escalation guidance must require an owner");
+  assert.match(source, /requires manual release approval/i, "escalation guidance must include manual release approval gates");
+  assert.match(source, /Escalate to a maintainer before merge/i, "escalation guidance must require maintainer escalation");
+  assert.match(source, /Link any deferred validation to a follow-up issue, release gate, or documented owner/i, "deferred validation must have a tracked owner or gate");
+  assert.match(source, /draft or blocked state/i, "unresolved release safety checks must block readiness");
+});
+
 test("pull request checklist keeps copyable review gates", async () => {
   const source = await readChecklist();
 
@@ -159,7 +182,7 @@ test("security review checklist links to reusable PR template", async () => {
   const source = await readChecklist();
 
   assert.match(source, /\[security-review-pr-template\.md\]\(\.\/security-review-pr-template\.md\)/, "checklist must link to the reusable PR template");
-  assert.match(source, /scope, validation evidence, abuse-case review, decision-log, and release-readiness sections/i, "checklist must describe template coverage");
+  assert.match(source, /scope, validation evidence, abuse-case review, decision-log, escalation ownership, and release-readiness sections/i, "checklist must describe template coverage");
 });
 
 test("security gate maintenance keeps all review surfaces synchronized", async () => {
@@ -184,6 +207,7 @@ test("security review PR template keeps required evidence fields", async () => {
 
   assert.match(source, /\| Abuse case \| Expected safe outcome \| Evidence \|/, "template must keep abuse-case evidence table");
   assert.match(source, /\| Decision \| Reason \| Evidence \| Owner \| Follow-up \|/, "template must keep decision-log table");
+  assert.match(source, /Security owner and escalation path are documented when risk is accepted or deferred\./, "template must keep escalation ownership gate");
   assert.match(source, /Remaining manual release checks have an owner and release phase\./, "template must keep release ownership gate");
 });
 
