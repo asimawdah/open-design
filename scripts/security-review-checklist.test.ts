@@ -14,6 +14,7 @@ const requiredSections = [
   "## Local-agent execution",
   "## Network and proxy boundaries",
   "## Artifact, export, and preview safety",
+  "## Telemetry, privacy, and diagnostics",
   "## Dependency and release hygiene",
   "## Risk and validation matrix",
   "## Abuse-case review prompts",
@@ -35,6 +36,9 @@ const requiredSecurityTerms = [
   "sandboxed previews",
   "dependency versions pinned",
   "release-smoke",
+  "telemetry payloads",
+  "crash reports",
+  "retention note",
   "oversized responses",
   "attacker-controlled",
   "accepted risks",
@@ -45,6 +49,7 @@ const requiredMatrixAreas = [
   "Local agent integration",
   "Proxy/media/webhook fetch",
   "Preview/export pipeline",
+  "Telemetry/diagnostics change",
   "Dependency/release change",
 ];
 
@@ -53,15 +58,17 @@ const requiredAbusePrompts = [
   "What happens if a URL redirects after validation?",
   "What happens if an agent path or workspace path is attacker-controlled?",
   "What happens if an export contains untrusted assets?",
+  "What happens if telemetry captures a workspace error?",
   "What happens if validation fails during release?",
 ];
 
 const requiredChecklistItems = [
   "Trust boundary changed and described.",
-  "Secrets are not logged, exported, committed, or echoed in errors.",
+  "Secrets are not logged, exported, committed, echoed in errors, or included in telemetry.",
   "URL/proxy inputs are validated against internal and metadata targets.",
   "Local-agent command execution avoids shell interpolation.",
   "Artifact/export paths were checked for unintended sensitive content.",
+  "Telemetry, diagnostics, logs, and support exports were checked for redaction and retention.",
   "Abuse-case prompt reviewed and safe outcome documented.",
   "Security decision log added when risk is accepted or deferred.",
   "Automated checks or tests were run and listed.",
@@ -75,6 +82,7 @@ const requiredTemplateSections = [
   "### Validation evidence",
   "### Abuse case reviewed",
   "### Security decision log",
+  "### Escalation and ownership",
   "### Release readiness",
 ];
 
@@ -87,6 +95,7 @@ const requiredTemplateFields = [
   "Manual checks:",
   "Blocked input cases:",
   "Artifacts inspected:",
+  "Telemetry and diagnostics:",
 ];
 
 const requiredExampleSections = [
@@ -95,6 +104,7 @@ const requiredExampleSections = [
   "## Local-agent execution",
   "## Proxy, media, and webhook fetches",
   "## Preview and export pipeline",
+  "## Telemetry, privacy, and diagnostics",
   "## Dependency and release changes",
   "## Quick reviewer triage",
 ];
@@ -114,6 +124,7 @@ const requiredExampleRiskCases = [
   "An attacker-controlled path contains `$(...)`",
   "A public URL redirects to `169.254.169.254`",
   "An imported asset tries to add a script tag",
+  "A crash report includes a workspace path and prompt excerpt",
   "A dependency update changes transitive network or file behavior",
 ];
 
@@ -122,9 +133,10 @@ const requiredGithubTemplateFields = [
   "## Security review",
   "Trust boundary changed:",
   "Secrets/tokens/config values touched:",
-  "External URLs, local files, generated artifacts, or desktop privileges touched:",
+  "External URLs, local files, generated artifacts, telemetry/diagnostics, or desktop privileges touched:",
   "Blocked input cases verified:",
   "Abuse case reviewed and expected safe outcome:",
+  "Telemetry/diagnostics redaction and retention checked:",
   "Remaining manual release checks:",
   "docs/security-review-pr-template.md",
   "docs/security-review-checklist.md",
@@ -152,7 +164,18 @@ test("security review checklist keeps actionable validation evidence", async () 
   assert.match(source, /\| Change area \| Main risk \| Required validation \| Release gate \|/, "matrix must keep review columns");
   assert.match(source, /exact command or workflow name/i, "required evidence must ask for exact verification commands");
   assert.match(source, /loopback, link-local, private ranges, redirects, metadata IPs, malformed URLs, and oversized responses/i, "required evidence must list blocked URL cases");
+  assert.match(source, /Any telemetry, diagnostic, log, crash-report, or support-export payload that changed/i, "required evidence must include telemetry and diagnostics payload review");
   assert.match(source, /Any abuse-case prompt that was reviewed, including the expected safe outcome\./i, "required evidence must include reviewed abuse cases");
+});
+
+test("security review checklist keeps telemetry and diagnostics privacy gates", async () => {
+  const source = await readChecklist();
+
+  assert.match(source, /Treat analytics events, diagnostics bundles, crash reports, support exports, and debug logs as security-sensitive output surfaces\./i, "telemetry section must classify diagnostics output as sensitive");
+  assert.match(source, /Keep prompts, design file contents, local paths, provider keys, access tokens, workspace names, and generated artifacts out of telemetry/i, "telemetry section must block raw sensitive content");
+  assert.match(source, /Prefer stable event names, coarse status codes, redacted identifiers, and aggregate counts/i, "telemetry section must prefer safe payload shapes");
+  assert.match(source, /Document retention, export, and deletion expectations/i, "telemetry section must keep retention guidance");
+  assert.match(source, /Payload snapshot review, redaction review, opt-in\/retention review/i, "matrix must require telemetry validation evidence");
 });
 
 test("security review checklist keeps abuse-case prompts for realistic misuse", async () => {
@@ -166,6 +189,7 @@ test("security review checklist keeps abuse-case prompts for realistic misuse", 
   assert.match(source, /Secret is stored only where intended and never echoed, logged, exported, or included in telemetry/i, "secret prompt must keep safe outcome");
   assert.match(source, /Redirect target is revalidated and blocked/i, "redirect prompt must keep safe outcome");
   assert.match(source, /Command runs without shell interpolation/i, "agent prompt must keep safe outcome");
+  assert.match(source, /Event payload uses redacted IDs and coarse status codes/i, "telemetry prompt must keep safe outcome");
 });
 
 test("security decision log keeps accepted-risk documentation", async () => {
@@ -215,6 +239,8 @@ test("security review PR template keeps required evidence fields", async () => {
     assert.match(source, new RegExp(escapeRegExp(field), "i"), `missing template field: ${field}`);
   }
 
+  assert.match(source, /telemetry payloads, diagnostics bundles/i, "template must include telemetry assets in scope");
+  assert.match(source, /telemetry events, diagnostics bundles, crash reports, support exports/i, "template must include telemetry artifacts in evidence");
   assert.match(source, /\| Abuse case \| Expected safe outcome \| Evidence \|/, "template must keep abuse-case evidence table");
   assert.match(source, /\| Decision \| Reason \| Evidence \| Owner \| Follow-up \|/, "template must keep decision-log table");
   assert.match(source, /Remaining manual release checks have an owner and release phase\./, "template must keep release ownership gate");
@@ -238,6 +264,7 @@ test("security review examples keep copyable evidence for high-risk paths", asyn
   assert.match(source, /redirects to `169\.254\.169\.254`/, "examples must include metadata redirect evidence");
   assert.match(source, /argument arrays without shell interpolation/, "examples must include command execution evidence");
   assert.match(source, /Generated HTML and ZIP contents inspected/, "examples must include artifact inspection evidence");
+  assert.match(source, /raw prompts, local paths, provider keys, generated artifacts, and workspace names are not collected by default/i, "examples must include telemetry non-collection evidence");
   assert.match(source, /Manual release checks have an owner or release phase/i, "reviewer triage must keep manual release ownership guidance");
 });
 
@@ -248,7 +275,7 @@ test("GitHub pull request template keeps lightweight security review gates", asy
     assert.match(source, new RegExp(escapeRegExp(field), "i"), `missing GitHub PR template field: ${field}`);
   }
 
-  assert.match(source, /touches secrets, local files, external URLs, generated artifacts, desktop privileges, dependencies, release behavior, or model-provider configuration/i, "security-sensitive surface checkbox must stay explicit");
+  assert.match(source, /touches secrets, local files, external URLs, generated artifacts, desktop privileges, dependencies, release behavior, telemetry\/diagnostics, or model-provider configuration/i, "security-sensitive surface checkbox must stay explicit");
   assert.match(source, /Complete this section when "Security-sensitive flow" is checked/i, "GitHub template must require security review when checked");
   assert.match(source, /Write "Not applicable" with a short reason/i, "GitHub template must require an explicit non-applicable reason");
 });
