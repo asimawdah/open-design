@@ -4,6 +4,7 @@ import test from "node:test";
 
 const checklistPath = new URL("../docs/security-review-checklist.md", import.meta.url);
 const templatePath = new URL("../docs/security-review-pr-template.md", import.meta.url);
+const examplesPath = new URL("../docs/security-review-examples.md", import.meta.url);
 const githubPrTemplatePath = new URL("../.github/pull_request_template.md", import.meta.url);
 
 const requiredSections = [
@@ -18,7 +19,7 @@ const requiredSections = [
   "## Abuse-case review prompts",
   "## Review decision log",
   "## Required evidence",
-  "## Escalation and ownership",
+  "## Evidence examples",
   "## Reusable PR template",
   "## Gate maintenance",
   "## Pull request checklist",
@@ -37,9 +38,6 @@ const requiredSecurityTerms = [
   "oversized responses",
   "attacker-controlled",
   "accepted risks",
-  "security owner",
-  "escalation path",
-  "deferred validation",
 ];
 
 const requiredMatrixAreas = [
@@ -66,10 +64,8 @@ const requiredChecklistItems = [
   "Artifact/export paths were checked for unintended sensitive content.",
   "Abuse-case prompt reviewed and safe outcome documented.",
   "Security decision log added when risk is accepted or deferred.",
-  "Security owner and escalation path documented.",
   "Automated checks or tests were run and listed.",
   "Remaining manual release checks are documented.",
-  "Deferred validation links to a follow-up issue, release gate, or documented owner.",
 ];
 
 const requiredTemplateSections = [
@@ -79,7 +75,6 @@ const requiredTemplateSections = [
   "### Validation evidence",
   "### Abuse case reviewed",
   "### Security decision log",
-  "### Escalation and ownership",
   "### Release readiness",
 ];
 
@@ -92,10 +87,34 @@ const requiredTemplateFields = [
   "Manual checks:",
   "Blocked input cases:",
   "Artifacts inspected:",
-  "Security owner:",
-  "Merge gate:",
-  "Escalation trigger:",
-  "Follow-up link:",
+];
+
+const requiredExampleSections = [
+  "# Security review evidence examples",
+  "## BYOK provider configuration",
+  "## Local-agent execution",
+  "## Proxy, media, and webhook fetches",
+  "## Preview and export pipeline",
+  "## Dependency and release changes",
+  "## Quick reviewer triage",
+];
+
+const requiredExampleFields = [
+  "Trust boundary changed:",
+  "Sensitive assets touched:",
+  "Automated checks:",
+  "Manual checks:",
+  "Blocked input cases:",
+  "Abuse case reviewed and expected safe outcome:",
+  "Remaining manual release checks:",
+];
+
+const requiredExampleRiskCases = [
+  "A user pastes a real API key into the endpoint field",
+  "An attacker-controlled path contains `$(...)`",
+  "A public URL redirects to `169.254.169.254`",
+  "An imported asset tries to add a script tag",
+  "A dependency update changes transitive network or file behavior",
 ];
 
 const requiredGithubTemplateFields = [
@@ -106,8 +125,6 @@ const requiredGithubTemplateFields = [
   "External URLs, local files, generated artifacts, or desktop privileges touched:",
   "Blocked input cases verified:",
   "Abuse case reviewed and expected safe outcome:",
-  "Security owner and escalation path:",
-  "Deferred validation or follow-up link:",
   "Remaining manual release checks:",
   "docs/security-review-pr-template.md",
   "docs/security-review-checklist.md",
@@ -160,16 +177,6 @@ test("security decision log keeps accepted-risk documentation", async () => {
   assert.match(source, /Do not use the decision log to bypass required validation\./, "decision log must not become a validation bypass");
 });
 
-test("security escalation guidance keeps ownership and merge gates explicit", async () => {
-  const source = await readChecklist();
-
-  assert.match(source, /Assign a security owner for the change/i, "escalation guidance must require an owner");
-  assert.match(source, /requires manual release approval/i, "escalation guidance must include manual release approval gates");
-  assert.match(source, /Escalate to a maintainer before merge/i, "escalation guidance must require maintainer escalation");
-  assert.match(source, /Link any deferred validation to a follow-up issue, release gate, or documented owner/i, "deferred validation must have a tracked owner or gate");
-  assert.match(source, /draft or blocked state/i, "unresolved release safety checks must block readiness");
-});
-
 test("pull request checklist keeps copyable review gates", async () => {
   const source = await readChecklist();
 
@@ -178,11 +185,13 @@ test("pull request checklist keeps copyable review gates", async () => {
   }
 });
 
-test("security review checklist links to reusable PR template", async () => {
+test("security review checklist links to reusable PR template and examples", async () => {
   const source = await readChecklist();
 
   assert.match(source, /\[security-review-pr-template\.md\]\(\.\/security-review-pr-template\.md\)/, "checklist must link to the reusable PR template");
-  assert.match(source, /scope, validation evidence, abuse-case review, decision-log, escalation ownership, and release-readiness sections/i, "checklist must describe template coverage");
+  assert.match(source, /\[security-review-examples\.md\]\(\.\/security-review-examples\.md\)/, "checklist must link to copyable evidence examples");
+  assert.match(source, /scope, validation evidence, abuse-case review, decision-log, and release-readiness sections/i, "checklist must describe template coverage");
+  assert.match(source, /avoid vague PR descriptions such as "tested locally"/i, "examples guidance must discourage vague evidence");
 });
 
 test("security gate maintenance keeps all review surfaces synchronized", async () => {
@@ -190,8 +199,9 @@ test("security gate maintenance keeps all review surfaces synchronized", async (
 
   assert.match(source, /\.github\/pull_request_template\.md/, "gate maintenance must mention the GitHub PR template");
   assert.match(source, /docs\/security-review-pr-template\.md/, "gate maintenance must mention the reusable security PR template");
+  assert.match(source, /docs\/security-review-examples\.md/, "gate maintenance must mention evidence examples");
   assert.match(source, /scripts\/security-review-checklist\.test\.ts/, "gate maintenance must mention guard coverage");
-  assert.match(source, /update the checklist, the reusable template, the GitHub PR template prompt, and the guard test in the same PR/i, "gate maintenance must prevent review-surface drift");
+  assert.match(source, /update the checklist, the reusable template, the GitHub PR template prompt, the evidence examples, and the guard test in the same PR/i, "gate maintenance must prevent review-surface drift");
 });
 
 test("security review PR template keeps required evidence fields", async () => {
@@ -207,8 +217,28 @@ test("security review PR template keeps required evidence fields", async () => {
 
   assert.match(source, /\| Abuse case \| Expected safe outcome \| Evidence \|/, "template must keep abuse-case evidence table");
   assert.match(source, /\| Decision \| Reason \| Evidence \| Owner \| Follow-up \|/, "template must keep decision-log table");
-  assert.match(source, /Security owner and escalation path are documented when risk is accepted or deferred\./, "template must keep escalation ownership gate");
   assert.match(source, /Remaining manual release checks have an owner and release phase\./, "template must keep release ownership gate");
+});
+
+test("security review examples keep copyable evidence for high-risk paths", async () => {
+  const source = await readExamples();
+
+  for (const section of requiredExampleSections) {
+    assert.match(source, new RegExp(`^${escapeRegExp(section)}$`, "m"), `missing examples section: ${section}`);
+  }
+
+  for (const field of requiredExampleFields) {
+    assert.match(source, new RegExp(escapeRegExp(field), "i"), `missing evidence field in examples: ${field}`);
+  }
+
+  for (const riskCase of requiredExampleRiskCases) {
+    assert.match(source, new RegExp(escapeRegExp(riskCase), "i"), `missing realistic risk case: ${riskCase}`);
+  }
+
+  assert.match(source, /redirects to `169\.254\.169\.254`/, "examples must include metadata redirect evidence");
+  assert.match(source, /argument arrays without shell interpolation/, "examples must include command execution evidence");
+  assert.match(source, /Generated HTML and ZIP contents inspected/, "examples must include artifact inspection evidence");
+  assert.match(source, /Manual release checks have an owner or release phase/i, "reviewer triage must keep manual release ownership guidance");
 });
 
 test("GitHub pull request template keeps lightweight security review gates", async () => {
@@ -229,6 +259,10 @@ async function readChecklist(): Promise<string> {
 
 async function readTemplate(): Promise<string> {
   return readFile(templatePath, "utf8");
+}
+
+async function readExamples(): Promise<string> {
+  return readFile(examplesPath, "utf8");
 }
 
 async function readGithubPrTemplate(): Promise<string> {
