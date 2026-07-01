@@ -99,19 +99,15 @@ Security-sensitive pull requests should include concrete evidence instead of a g
 - Any abuse-case prompt that was reviewed, including the expected safe outcome.
 - Any manual release checks that remain, with the owner or release phase that should complete them.
 
-## Escalation and ownership
+## Evidence examples
 
-Security-sensitive pull requests should make ownership explicit before merge so release blockers do not become ambiguous:
+Use [`security-review-examples.md`](./security-review-examples.md) for copyable examples covering BYOK provider configuration, local-agent execution, proxy/media/webhook fetches, preview/export safety, and dependency/release changes.
 
-- Assign a security owner for the change, even when the owner is the PR author.
-- Mark whether the change can merge after automated guard coverage or requires manual release approval.
-- Escalate to a maintainer before merge when a change accepts risk, defers validation, weakens a guard, changes a trust boundary, or touches credential storage.
-- Link any deferred validation to a follow-up issue, release gate, or documented owner instead of leaving a checklist item blank.
-- Keep the PR in draft or blocked state when the safe outcome depends on an unresolved release-smoke, audit, or manual artifact inspection.
+The examples are intentionally specific: each one includes a trust-boundary statement, sensitive assets, exact validation evidence, blocked input cases, an abuse-case outcome, and remaining release checks. Use them to avoid vague PR descriptions such as "tested locally" for security-sensitive changes.
 
 ## Reusable PR template
 
-Use [`security-review-pr-template.md`](./security-review-pr-template.md) when a change needs repeatable evidence capture. The template turns this checklist into a pull request description structure with scope, validation evidence, abuse-case review, decision-log, escalation ownership, and release-readiness sections.
+Use [`security-review-pr-template.md`](./security-review-pr-template.md) when a change needs repeatable evidence capture. The template turns this checklist into a pull request description structure with scope, validation evidence, abuse-case review, decision-log, and release-readiness sections.
 
 Keep the template aligned with this checklist when adding new security review areas so reviewers do not need to reconcile two separate review contracts.
 
@@ -121,9 +117,10 @@ Keep the three review surfaces synchronized whenever this checklist changes:
 
 - `.github/pull_request_template.md` should keep the lightweight security review prompts that every PR author sees.
 - `docs/security-review-pr-template.md` should keep the expanded evidence template for high-risk PRs.
+- `docs/security-review-examples.md` should keep copyable examples for the most common high-risk review paths.
 - `scripts/security-review-checklist.test.ts` should guard both docs and the GitHub PR template so reviewers notice accidental removal of review gates before merge.
 
-When a new security area is added, update the checklist, the reusable template, the GitHub PR template prompt, and the guard test in the same PR. This prevents a checklist-only change from silently drifting away from the pull request workflow.
+When a new security area is added, update the checklist, the reusable template, the GitHub PR template prompt, the evidence examples, and the guard test in the same PR. This prevents a checklist-only change from silently drifting away from the pull request workflow.
 
 ## Pull request checklist
 
@@ -139,8 +136,6 @@ Copy this into security-sensitive pull requests when relevant:
 - [ ] Artifact/export paths were checked for unintended sensitive content.
 - [ ] Abuse-case prompt reviewed and safe outcome documented.
 - [ ] Security decision log added when risk is accepted or deferred.
-- [ ] Security owner and escalation path documented.
 - [ ] Automated checks or tests were run and listed.
 - [ ] Remaining manual release checks are documented.
-- [ ] Deferred validation links to a follow-up issue, release gate, or documented owner.
 ```
