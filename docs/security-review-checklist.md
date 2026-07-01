@@ -1,6 +1,6 @@
 # Security review checklist
 
-Use this checklist when changing model-provider configuration, local-agent execution, proxy/network behavior, artifact exports, desktop packaging, telemetry/diagnostics, or dependency policy. It is designed for pull request review and release readiness, not as a replacement for threat modeling.
+Use this checklist when changing model-provider configuration, local-agent execution, proxy/network behavior, artifact exports, AI-generated output, desktop packaging, telemetry/diagnostics, or dependency policy. It is designed for pull request review and release readiness, not as a replacement for threat modeling.
 
 ## Review summary
 
@@ -43,6 +43,14 @@ Every security-sensitive pull request should state:
 - Document any export format that can embed external links, scripts, fonts, or remote media.
 - Add fixtures for risky export cases when a bug fix changes sanitizer, preview, or packaging behavior.
 
+## AI output and renderer handoff
+
+- Treat model output, agent output, renderer handoff, and generated actions as security-sensitive input until schema validation, sanitization, and side-effect gates succeed.
+- Validate generated JSON before rendering or persisting it; reject or ignore unknown action fields according to a documented policy.
+- Keep generated scripts, event handlers, remote media, local file URLs, workspace paths, and command-like fields out of previews and exports unless an explicit sanitizer and review gate allows them.
+- Require preview, confirmation, or dry-run gates before generated output can write files, call local agents, install dependencies, fetch network resources, or use desktop privileges.
+- Use [`ai-output-security-review.md`](./ai-output-security-review.md) for detailed AI output security review evidence, abuse cases, and reviewer checklist items.
+
 ## Telemetry, privacy, and diagnostics
 
 - Treat analytics events, diagnostics bundles, crash reports, support exports, and debug logs as security-sensitive output surfaces.
@@ -57,7 +65,7 @@ Every security-sensitive pull request should state:
 - Run package-manager audit or equivalent review before releases that change runtime dependencies.
 - Verify desktop packaging, updater, and notarization changes with a release-smoke path before publishing.
 - Keep generated files, vendored assets, and allowlisted JavaScript documented in the relevant guard comments.
-- Record security-impacting release notes when behavior changes for secrets, proxying, local execution, telemetry, diagnostics, or exported artifacts.
+- Record security-impacting release notes when behavior changes for secrets, proxying, local execution, telemetry, diagnostics, AI output handoff, or exported artifacts.
 
 ## Risk and validation matrix
 
@@ -69,6 +77,7 @@ Use this matrix to choose the minimum review path for a security-sensitive chang
 | Local agent integration | Unsafe command execution or broad file access | Argument-array execution review, workspace-scope review, dry-run behavior | Destructive actions are explicit and documented |
 | Proxy/media/webhook fetch | SSRF, redirects to internal targets, resource exhaustion | Redirect policy review, blocked-network tests, timeout/body-limit checks | Internal and metadata targets stay blocked |
 | Preview/export pipeline | Script, remote media, font, or private data leakage | Sanitizer review, fixture review, exported-artifact inspection | Exported files contain only intentional content |
+| AI output renderer handoff | Generated scripts, unsafe paths, command-like fields, or partial unsafe state | Schema validation, sanitizer fixture, malformed-output fallback review | Invalid or unsafe output fails visibly before rendering, file writes, agent calls, or exports |
 | Telemetry/diagnostics change | Accidental collection of prompts, paths, secrets, or generated artifacts | Payload snapshot review, redaction review, opt-in/retention review | Telemetry and diagnostics contain only documented, redacted fields |
 | Dependency/release change | Supply-chain or packaging regression | Pin review, audit review, release-smoke path | Security-impacting release notes are recorded |
 
@@ -82,6 +91,7 @@ Before approving a security-sensitive change, reviewers should try to describe a
 | What happens if a URL redirects after validation? | Media fetch, proxy preview, provider base URL | Redirect target is revalidated and blocked if it becomes private, loopback, link-local, or metadata-hosted |
 | What happens if an agent path or workspace path is attacker-controlled? | Local agent setup, project import, generated command | Command runs without shell interpolation and stays inside the documented workspace scope |
 | What happens if an export contains untrusted assets? | HTML preview, ZIP export, font/image/media references | Sanitizer, allowlist, and export inspection keep scripts, remote media, and private files out |
+| What happens if AI output includes command-like fields or unsafe renderer content? | Generated JSON includes `script`, `command`, unsafe path, or external asset reference | Schema validation rejects unsafe fields and user sees recovery guidance before side effects run |
 | What happens if telemetry captures a workspace error? | Crash report, analytics event, support bundle, debug log | Event payload uses redacted IDs and coarse status codes without prompts, secrets, local paths, or generated artifacts |
 | What happens if validation fails during release? | Audit failure, packaging smoke failure, dependency change | Release is blocked or explicitly downgraded with a documented owner and follow-up action |
 
@@ -104,15 +114,15 @@ Do not use the decision log to bypass required validation. Use it to make remain
 Security-sensitive pull requests should include concrete evidence instead of a generic "tested" note:
 
 - The exact command or workflow name used, such as `pnpm guard`, package-manager audit, or release-smoke check.
-- The reviewed trust boundary and whether it touches secrets, local files, external URLs, generated artifacts, telemetry/diagnostics, or desktop privileges.
-- Any blocked input cases that were verified, especially loopback, link-local, private ranges, redirects, metadata IPs, malformed URLs, and oversized responses.
+- The reviewed trust boundary and whether it touches secrets, local files, external URLs, generated artifacts, telemetry/diagnostics, AI output/renderer handoff, or desktop privileges.
+- Any blocked input cases that were verified, especially loopback, link-local, private ranges, redirects, metadata IPs, malformed URLs, oversized responses, unsafe paths, generated scripts, unknown action fields, and partial/malformed model output.
 - Any telemetry, diagnostic, log, crash-report, or support-export payload that changed, with redaction and retention notes.
 - Any abuse-case prompt that was reviewed, including the expected safe outcome.
 - Any manual release checks that remain, with the owner or release phase that should complete them.
 
 ## Evidence examples
 
-Use [`security-review-examples.md`](./security-review-examples.md) for copyable examples covering BYOK provider configuration, local-agent execution, proxy/media/webhook fetches, preview/export safety, telemetry/diagnostics, and dependency/release changes.
+Use [`security-review-examples.md`](./security-review-examples.md) for copyable examples covering BYOK provider configuration, local-agent execution, proxy/media/webhook fetches, preview/export safety, AI output renderer handoff, telemetry/diagnostics, and dependency/release changes.
 
 The examples are intentionally specific: each one includes a trust-boundary statement, sensitive assets, exact validation evidence, blocked input cases, an abuse-case outcome, and remaining release checks. Use them to avoid vague PR descriptions such as "tested locally" for security-sensitive changes.
 
@@ -129,9 +139,10 @@ Keep the three review surfaces synchronized whenever this checklist changes:
 - `.github/pull_request_template.md` should keep the lightweight security review prompts that every PR author sees.
 - `docs/security-review-pr-template.md` should keep the expanded evidence template for high-risk PRs.
 - `docs/security-review-examples.md` should keep copyable examples for the most common high-risk review paths.
-- `scripts/security-review-checklist.test.ts` should guard both docs and the GitHub PR template so reviewers notice accidental removal of review gates before merge.
+- `docs/ai-output-security-review.md` should keep detailed AI output review coverage for model/agent output and renderer handoff changes.
+- `scripts/security-review-checklist.test.ts` and `scripts/ai-output-security-review.test.ts` should guard both docs and the GitHub PR template so reviewers notice accidental removal of review gates before merge.
 
-When a new security area is added, update the checklist, the reusable template, the GitHub PR template prompt, the evidence examples, and the guard test in the same PR. This prevents a checklist-only change from silently drifting away from the pull request workflow.
+When a new security area is added, update the checklist, the reusable template, the GitHub PR template prompt, the evidence examples, the AI output guide when relevant, and the guard test in the same PR. This prevents a checklist-only change from silently drifting away from the pull request workflow.
 
 ## Pull request checklist
 
@@ -145,6 +156,7 @@ Copy this into security-sensitive pull requests when relevant:
 - [ ] URL/proxy inputs are validated against internal and metadata targets.
 - [ ] Local-agent command execution avoids shell interpolation.
 - [ ] Artifact/export paths were checked for unintended sensitive content.
+- [ ] AI output and renderer handoff were checked for schema validation, unsafe fields, generated scripts, unsafe paths, side effects, and visible recovery behavior.
 - [ ] Telemetry, diagnostics, logs, and support exports were checked for redaction and retention.
 - [ ] Abuse-case prompt reviewed and safe outcome documented.
 - [ ] Security decision log added when risk is accepted or deferred.
