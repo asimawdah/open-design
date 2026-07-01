@@ -86,6 +86,27 @@ Minimum evidence to include:
 - A generated-artifact inspection note.
 - An explicit statement about remote links, scripts, fonts, and private file references.
 
+## Telemetry, privacy, and diagnostics
+
+```md
+### Security review
+
+- Change area: Telemetry/diagnostics change
+- Trust boundary changed: Runtime errors and feature outcomes are summarized into analytics events and support diagnostics.
+- Sensitive assets touched: Event names, error categories, local project path, prompt text, generated artifact IDs, crash-report metadata.
+- Automated checks: `pnpm guard`; telemetry payload snapshot test.
+- Manual checks: Sample event payload and diagnostics bundle inspected for redacted identifiers and coarse status codes.
+- Blocked input cases: prompt containing a provider key, local path with username, generated HTML containing private text, crash message with token-like value.
+- Abuse case reviewed and expected safe outcome: A crash report includes a workspace path and prompt excerpt; the emitted payload keeps only a redacted workspace hash, coarse error category, and documented opt-in flag.
+- Remaining manual release checks: Release owner confirms retention copy and opt-in wording before publish.
+```
+
+Minimum evidence to include:
+
+- A payload fixture or snapshot showing field names and redaction behavior.
+- A statement that raw prompts, local paths, provider keys, generated artifacts, and workspace names are not collected by default.
+- Retention, opt-in, or support-export guidance for any persisted diagnostic field.
+
 ## Dependency and release changes
 
 ```md
@@ -114,5 +135,6 @@ Use this compact checklist before approving:
 - Evidence names exact commands or workflow runs.
 - Blocked inputs are specific, not generic.
 - Secrets and local files have a redaction or non-exposure statement.
+- Telemetry and diagnostics list only documented, redacted, intentionally retained fields.
 - Manual release checks have an owner or release phase.
 - Accepted, blocked, or deferred risks are captured in the decision log.
