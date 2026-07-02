@@ -40,6 +40,21 @@ Review at least one realistic failure or abuse case:
 | Model output is huge, malformed, or missing required sections | User sees a recoverable validation error and no partial side effect is committed |
 | Prompt or design content is copied into telemetry, diagnostics, or crash reports | Payload uses redacted IDs, coarse error codes, and documented retention/opt-in behavior |
 
+## Minimal regression fixture matrix
+
+Every PR that adds or changes an AI-output contract should include at least one safe fixture and one blocked fixture close to the changed boundary. Prefer fixtures that can run without provider access, network access, desktop permissions, or real user projects.
+
+| Fixture | Boundary to exercise | Required assertion |
+| --- | --- | --- |
+| Valid minimal renderer payload | Parser and schema accept path | Accepted output renders or persists only documented fields |
+| Unknown executable action field | Parser and side-effect gate | `command`, `script`, `postinstall`, or equivalent fields cannot trigger actions |
+| Unsafe remote or local URL | URL normalizer and fetch policy | Private IPs, `file://`, localhost, credential-bearing URLs, and redirects are blocked or stripped |
+| Path traversal or absolute file path | Workspace path resolver | Writes stay inside the intended workspace/export directory after decoding and normalization |
+| Oversized or malformed output | Recovery UX and transaction boundary | No partial file write, preview mutation, telemetry upload, or agent action is committed |
+| Telemetry-shaped prompt/design leak | Diagnostics and crash-report serializer | Raw prompts, local paths, design files, generated artifacts, and secrets are redacted by default |
+
+Reviewers should ask for a follow-up issue when a real integration cannot yet test a high-risk case. The PR should still document the temporary gap, the manual evidence used, and the owner of the missing automated fixture.
+
 ## Evidence to include in PRs
 
 Security-sensitive PRs that use model output should include:
