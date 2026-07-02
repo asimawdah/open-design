@@ -4,6 +4,8 @@ Use this guide when a change turns model output, agent output, imported design c
 
 AI output is useful product data, but reviewers should treat it as untrusted input until it crosses a validated contract boundary.
 
+For concrete copyable fixtures, use [`docs/ai-output-contract-fixtures.md`](./ai-output-contract-fixtures.md) alongside this guide.
+
 ## Review triggers
 
 Apply this review when a pull request changes any of these paths:
@@ -43,6 +45,8 @@ Review at least one realistic failure or abuse case:
 ## Minimal regression fixture matrix
 
 Every PR that adds or changes an AI-output contract should include at least one safe fixture and one blocked fixture close to the changed boundary. Prefer fixtures that can run without provider access, network access, desktop permissions, or real user projects.
+
+Use the dedicated [AI output contract fixtures](./ai-output-contract-fixtures.md) document when a PR needs concrete payload examples for renderer handoff, generated actions, URL policy, workspace file writes, malformed output, or telemetry redaction.
 
 | Fixture | Boundary to exercise | Required assertion |
 | --- | --- | --- |
