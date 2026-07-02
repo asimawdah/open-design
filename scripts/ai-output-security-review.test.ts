@@ -12,6 +12,7 @@ const requiredGuideSections = [
   "## Review triggers",
   "## Contract boundary",
   "## Dangerous output cases",
+  "## Minimal regression fixture matrix",
   "## Evidence to include in PRs",
   "## Reviewer checklist",
 ];
@@ -23,6 +24,24 @@ const requiredOutputCases = [
   "Generated file path contains traversal, absolute paths, shell metacharacters, or hidden config targets",
   "Model output is huge, malformed, or missing required sections",
   "Prompt or design content is copied into telemetry, diagnostics, or crash reports",
+];
+
+const requiredFixtureRows = [
+  "Valid minimal renderer payload",
+  "Unknown executable action field",
+  "Unsafe remote or local URL",
+  "Path traversal or absolute file path",
+  "Oversized or malformed output",
+  "Telemetry-shaped prompt/design leak",
+];
+
+const requiredFixtureAssertions = [
+  "Accepted output renders or persists only documented fields",
+  "`command`, `script`, `postinstall`, or equivalent fields cannot trigger actions",
+  "Private IPs, `file://`, localhost, credential-bearing URLs, and redirects are blocked or stripped",
+  "Writes stay inside the intended workspace/export directory after decoding and normalization",
+  "No partial file write, preview mutation, telemetry upload, or agent action is committed",
+  "Raw prompts, local paths, design files, generated artifacts, and secrets are redacted by default",
 ];
 
 const requiredEvidenceTerms = [
@@ -48,6 +67,21 @@ test("AI output guide keeps explicit review coverage", async () => {
   for (const term of requiredEvidenceTerms) {
     assert.match(source, new RegExp(escapeRegExp(term), "i"), `missing reviewer checklist term: ${term}`);
   }
+});
+
+test("AI output guide keeps a minimum regression fixture matrix", async () => {
+  const source = await readGuide();
+
+  for (const fixture of requiredFixtureRows) {
+    assert.match(source, new RegExp(escapeRegExp(fixture), "i"), `missing AI output fixture row: ${fixture}`);
+  }
+
+  for (const assertion of requiredFixtureAssertions) {
+    assert.match(source, new RegExp(escapeRegExp(assertion), "i"), `missing AI output fixture assertion: ${assertion}`);
+  }
+
+  assert.match(source, /without provider access, network access, desktop permissions, or real user projects/i, "fixture guidance must remain offline and deterministic");
+  assert.match(source, /document the temporary gap, the manual evidence used, and the owner of the missing automated fixture/i, "fixture gaps must require explicit follow-up evidence");
 });
 
 test("security review docs link AI output handoff review", async () => {
