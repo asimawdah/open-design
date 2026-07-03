@@ -63,6 +63,7 @@ const requiredFixtureSections = [
   "## Blocked fixture: path traversal and workspace escape",
   "## Blocked fixture: oversized or malformed output",
   "## Blocked fixture: telemetry-shaped content leak",
+  "## Fixture selection by changed boundary",
   "## PR evidence template",
 ];
 
@@ -78,6 +79,22 @@ const requiredFixturePayloadTerms = [
   '"path": "/tmp/open-design-escape.svg"',
   '"event": "ai_output_validation_failed"',
   '"apiKey": "sk-example"',
+];
+
+const requiredFixtureSelectionRows = [
+  "Renderer parser or schema validation",
+  "URL, media, import, webhook, or proxy fetch handling",
+  "Export, generated files, project writes, or attachment paths",
+  "Generated action, local-agent bridge, package-manager hook, or shell-like handoff",
+  "Telemetry, diagnostics, crash reports, or support bundles",
+];
+
+const requiredFixtureSelectionTerms = [
+  "Use this matrix to avoid adding a generic fixture that does not exercise the code path changed by a pull request.",
+  "Normalization, redirect policy, and redacted diagnostics run before any network request starts",
+  "Decoding, normalization, root confinement, and rollback behavior are verified for each write target",
+  "Action fields cannot trigger side effects without preview, confirmation, and an explicit safe gate",
+  "include one fixture per changed boundary or document why the shared parser/validator covers every affected side effect",
 ];
 
 test("AI output guide keeps explicit review coverage", async () => {
@@ -125,6 +142,18 @@ test("AI output contract fixtures keep safe and blocked examples reviewable", as
   assert.match(source, /Side effects prevented before validation:/i, "fixture evidence template must capture side-effect gating");
   assert.match(source, /Telemetry\/diagnostics redaction verified:/i, "fixture evidence template must capture telemetry redaction evidence");
   assert.match(source, /Remaining gap and owner, if any:/i, "fixture evidence template must require explicit ownership for gaps");
+});
+
+test("AI output contract fixtures map fixture choice to changed boundaries", async () => {
+  const source = await readFile(aiOutputFixturePath, "utf8");
+
+  for (const row of requiredFixtureSelectionRows) {
+    assert.match(source, new RegExp(escapeRegExp(row), "i"), `missing fixture selection boundary: ${row}`);
+  }
+
+  for (const term of requiredFixtureSelectionTerms) {
+    assert.match(source, new RegExp(escapeRegExp(term), "i"), `missing fixture selection guidance: ${term}`);
+  }
 });
 
 test("security review docs link AI output handoff review", async () => {
