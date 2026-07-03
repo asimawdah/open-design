@@ -151,6 +151,20 @@ Required assertions:
 - Telemetry uses stable event names, coarse error codes, size buckets, and opt-in/retention policy references.
 - Crash reports and support bundles follow the same redaction rules as product telemetry.
 
+## Fixture selection by changed boundary
+
+Use this matrix to avoid adding a generic fixture that does not exercise the code path changed by a pull request.
+
+| Changed boundary | Recommended fixture | Evidence to capture |
+| --- | --- | --- |
+| Renderer parser or schema validation | Safe minimal renderer payload plus malformed output | Accepted fields are explicit, unknown fields are handled by policy, and invalid output does not mutate preview state |
+| URL, media, import, webhook, or proxy fetch handling | Unsafe URLs and redirects | Normalization, redirect policy, and redacted diagnostics run before any network request starts |
+| Export, generated files, project writes, or attachment paths | Path traversal and workspace escape | Decoding, normalization, root confinement, and rollback behavior are verified for each write target |
+| Generated action, local-agent bridge, package-manager hook, or shell-like handoff | Executable action fields | Action fields cannot trigger side effects without preview, confirmation, and an explicit safe gate |
+| Telemetry, diagnostics, crash reports, or support bundles | Telemetry-shaped content leak | Raw prompt, local path, artifact, cookie, token, and API-key fields are redacted by default |
+
+If a PR changes more than one boundary, include one fixture per changed boundary or document why the shared parser/validator covers every affected side effect.
+
 ## PR evidence template
 
 ```md
